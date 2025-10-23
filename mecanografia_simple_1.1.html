@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Juego: Aprende Mecanografía (JS)</title>
+  <style>
+    :root{
+      --bg:#ffffff; /* Fondo blanco */
+      --card:#f8fafc; /* slate-50 */
+      --muted:#64748b; /* slate-500 */
+      --accent:#3b82f6; /* blue-500 */
+      --ok:#10b981; /* green-500 */
+      --bad:#ef4444; /* red-500 */
+      --warn:#f59e0b; /* amber-500 */
+      --ink:#1e293b; /* slate-800 */
+      --border:#e2e8f0; /* slate-200 */
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu,
+      Cantarell, Noto Sans, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background:linear-gradient(180deg, #ffffff, #f1f5f9);
+      color:var(--ink);
+      min-height:100svh;
+      display:grid; place-items:start center;
+      padding:24px;
+    }
+    .app{width:min(1100px,96vw);}
+    .header{display:flex;gap:16px;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .title{font-size:clamp(20px,2.2vw,28px);font-weight:800;letter-spacing:.3px}
+    .subtitle{font-size:12px;color:var(--muted)}
+    .card{background:var(--card); backdrop-filter: blur(8px); border:1px solid var(--border); border-radius:16px; padding:16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .controls select,.controls button,.controls input[type="number"]{
+      background:white;color:var(--ink);border:1px solid var(--border);padding:10px 12px;border-radius:10px; font-weight:600; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+    .controls button:hover {
+      background:#f1f5f9;
+    }
+    .controls .pill{padding:8px 10px;border-radius:999px;background:white;border:1px solid var(--border);display:flex;gap:6px;align-items:center; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);}
+    .controls label{font-size:12px;color:var(--muted)}
+    .grid{display:grid;grid-template-columns:1fr;gap:12px}
+    @media (max-width:900px){.grid{grid-template-columns:1fr}}
+
+    /* Texto objetivo */
+    #target{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace; 
+      line-height:1.8; font-size:clamp(16px,2.1vw,20px); padding:18px; border-radius:12px; background:white; min-height:140px;
+      border:1px dashed var(--border); position:relative; box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);}
+    #target .done{color:#94a3b8} /* slate-400 */
+    #target .current{background:linear-gradient(90deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0)); border-bottom:2px solid var(--accent)}
+    #target .ok{color:var(--ok)}
+    #target .bad{color:var(--bad); text-decoration: underline wavy var(--bad) 2px}
+    .caret{position:absolute; width:2px; background:var(--accent); height:1.4em; animation:blink 1s steps(1) infinite; box-shadow:0 0 10px var(--accent)}
+    @keyframes blink{50%{opacity:0}}
+
+    /* Área de escritura accesible (pero oculto visualmente) */
+    #hiddenInput{position:absolute; left:-9999px}
+
+    /* Stats */
+    .stats{display:grid; grid-template-columns: repeat(5, minmax(120px,1fr)); gap:10px}
+    @media (max-width:700px){.stats{grid-template-columns:repeat(2,1fr)}}
+    .kpi{background:white;border:1px solid var(--border); padding:12px;border-radius:12px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);}
+    .kpi .label{font-size:12px;color:var(--muted)}
+    .kpi .value{font-size:22px;font-weight:800}
+
+    .progress{height:10px;background:#e2e8f0;border-radius:999px;overflow:hidden;border:1px solid var(--border)}
+    .bar{height:100%;width:0;background:linear-gradient(90deg, var(--accent), #60a5fa)}
+
+    .footer{color:var(--muted);font-size:12px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .badge{background:white;border:1px solid var(--border);padding:4px 8px;border-radius:999px; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <div>
+        <div class="title">🎯 Juego: Aprende Mecanografía</div>
+        <div class="subtitle">JavaScript puro · Mide WPM, precisión y errores · Guarda récord en LocalStorage</div>
+      </div>
+      <div class="row">
+        <button id="btnStart">▶ Iniciar</button>
+        <button id="btnPause">⏸ Pausa</button>
+        <button id="btnReset">↺ Reiniciar</button>
+      </div>
+    </div>
+
+    <div class="card controls">
+      <div class="row" style="align-items:center; justify-content:space-between">
+        <div class="row" style="flex-wrap:wrap">
+          <div class="pill">
+            <label for="mode">Modo</label>
+            <select id="mode">
+              <option value="basico">Básico (letras)</option>
+              <option value="palabras" selected>Palabras</option>
+              <option value="frases">Frases</option>
+              <option value="numeros">Números</option>
+              <option value="simbolos">Símbolos</option>
+              <option value="personalizado">Personalizado</option>
+            </select>
+          </div>
+          <div class="pill">
+            <label for="nivel">Nivel</label>
+            <select id="nivel">
+              <option value="1">1</option>
+              <option value="2" selected>2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+            </select>
+          </div>
+          <div class="pill">
+            <label for="longitud">Longitud</label>
+            <input id="longitud" type="number" min="20" max="500" value="120" />
+          </div>
+          <div class="pill" id="customWrap" style="display:none; min-width:340px">
+            <label for="custom">Texto personalizado</label>
+            <input id="custom" type="text" placeholder="Escribe aquí el texto a practicar…" style="flex:1; background:transparent; color:var(--ink); border:0; outline:none" />
+          </div>
+        </div>
+        <div class="row">
+          <button id="btnNuevo">🧩 Nuevo texto</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- Área principal de escritura -->
+      <div class="card">
+        <div id="target" aria-live="polite"></div>
+        <input id="hiddenInput" aria-label="Área de escritura" />
+        <div class="progress" style="margin-top:12px"><div class="bar" id="bar"></div></div>
+        <div class="footer">
+          <span class="badge">Consejo: empieza a teclear para arrancar el temporizador.</span>
+          <span class="badge">ESC: reinicia • TAB: nuevo texto</span>
+        </div>
+      </div>
+      
+      <!-- Estadísticas -->
+      <div class="card">
+        <div class="stats">
+          <div class="kpi"><div class="label">⏱ Tiempo</div><div class="value" id="kTime">0.0 s</div></div>
+          <div class="kpi"><div class="label">⚡ WPM</div><div class="value" id="kWpm">0</div></div>
+          <div class="kpi"><div class="label">⌨️ CPM</div><div class="value" id="kCpm">0</div></div>
+          <div class="kpi"><div class="label">🎯 Precisión</div><div class="value" id="kAcc">100%</div></div>
+          <div class="kpi"><div class="label">❌ Errores</div><div class="value" id="kErr">0</div></div>
+        </div>
+        <div class="row" style="margin-top:12px">
+          <div class="kpi" style="flex:1"><div class="label">🏆 Récord WPM</div><div class="value" id="kBest">0</div></div>
+          <div class="kpi" style="flex:1"><div class="label">📈 Progreso</div><div class="value" id="kProg">0%</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // ======== Datos base ========
+  const WORDS = `camión rueda freno torque ruta carga motor aceite filtro embrague caja cambio volante seguro pista viaje
+  neumático eje ballesta bujía batería rodamiento pistón cigüeñal chasis tráiler trailer trailer
+  carretera peaje taller taller aliado proveedor cliente factura pedido despacho inventario picking packing
+  software logística bodega pallet estiba conductor tracto mulero`.split(/\s+/);
+
+  const PHRASES = [
+    "El rápido zorro marrón salta sobre el perro perezoso.",
+    "Lleva whisky del bueno al jefe por favor.",
+    "Quien a buen árbol se arrima, buena sombra le cobija.",
+    "Mezcla rápido: números, símbolos y letras para mejorar.",
+    "Repuestos Simón Bolívar: calidad, servicio y confianza." 
+  ];
+
+  const NUMBERS = "0123456789 ".repeat(10).trim();
+  const SYMBOLS = "!@#$%^&*()[]{}:;.,-_=+/?\\'\"|<> ".repeat(6).trim();
+  const BASIC = "asdf jklñ ASDF JKLÑ qwer uiop zxcv nm,.;:";
+
+  // ======== Estado ========
+  const state = {
+    text:"",
+    index:0,
+    started:false,
+    paused:false,
+    startTime:0,
+    elapsed:0, // ms acumulados
+    errors:0,
+    typed:0, // todas las teclas
+    correct:0,
+  };
+
+  // ======== DOM ========
+  const target = document.getElementById('target');
+  const hiddenInput = document.getElementById('hiddenInput');
+  const kTime = document.getElementById('kTime');
+  const kWpm = document.getElementById('kWpm');
+  const kCpm = document.getElementById('kCpm');
+  const kAcc = document.getElementById('kAcc');
+  const kErr = document.getElementById('kErr');
+  const kBest = document.getElementById('kBest');
+  const kProg = document.getElementById('kProg');
+  const bar = document.getElementById('bar');
+
+  const btnStart = document.getElementById('btnStart');
+  const btnPause = document.getElementById('btnPause');
+  const btnReset = document.getElementById('btnReset');
+  const btnNuevo = document.getElementById('btnNuevo');
+  const mode = document.getElementById('mode');
+  const nivel = document.getElementById('nivel');
+  const longitud = document.getElementById('longitud');
+  const custom = document.getElementById('custom');
+  const customWrap = document.getElementById('customWrap');
+
+  // ======== Utilidades ========
+  function clamp(n,a,b){return Math.max(a,Math.min(b,n))}
+  function fmtPct(n){return (n).toFixed(0)+"%"}
+  function fmtTime(ms){return (ms/1000).toFixed(1)+" s"}
+
+  function saveBest(wpm){
+    const key = 'typing_best_wpm';
+    const best = Number(localStorage.getItem(key)||0);
+    if(wpm>best){ localStorage.setItem(key,String(wpm)); return wpm; }
+    return best;
+  }
+  function loadBest(){ return Number(localStorage.getItem('typing_best_wpm')||0) }
+
+  // ======== Generador de texto ========
+  function generateText(){
+    const lvl = Number(nivel.value);
+    const len = clamp(Number(longitud.value)||120, 20, 500);
+    let out = "";
+    const m = mode.value;
+    if(m==='personalizado'){
+      out = (custom.value||"Escribe el texto que deseas practicar.").trim();
+    } else if(m==='basico'){
+      const chars = BASIC.repeat(6 - Math.max(1,6-lvl));
+      while(out.length < len){ out += pick(chars) }
+    } else if(m==='palabras'){
+      while(out.length < len){ out += pickArray(WORDS, lvl) + " "; }
+      out = out.trim();
+    } else if(m==='frases'){
+      while(out.length < len){ out += pickArray(PHRASES, 1) + " "; }
+      out = out.trim();
+    } else if(m==='numeros'){
+      while(out.length < len){ out += pick(NUMBERS) }
+    } else if(m==='simbolos'){
+      while(out.length < len){ out += pick(SYMBOLS) }
+    }
+    return out.replace(/\s+/g,' ').slice(0,len).trim();
+  }
+  function pick(str){ return str[Math.floor(Math.random()*str.length)] }
+  function pickArray(arr, mult=1){ return arr[Math.floor(Math.random()*arr.length*mult)%arr.length] }
+
+  // ======== Render ========
+  function render(){
+    target.innerHTML = '';
+    const frag = document.createDocumentFragment();
+    const done = document.createElement('span'); done.className='done'; done.textContent = state.text.slice(0,state.index);
+    const current = document.createElement('span'); current.className='current'; current.textContent = state.text[state.index] || ' ';
+    const rest = document.createElement('span'); rest.textContent = state.text.slice(state.index+1);
+    frag.append(done, current, rest);
+    target.appendChild(frag);
+    // caret
+    positionCaret();
+    // progreso
+    const prog = state.text.length? (state.index/state.text.length)*100 : 0;
+    bar.style.width = prog + '%';
+    kProg.textContent = Math.round(prog) + '%';
+  }
+
+  function positionCaret(){
+    // posiciona un cursor "visual" detrás del carácter actual
+    const rect = target.getBoundingClientRect();
+    const range = document.createRange();
+    const node = target.childNodes[0]; // done span
+    const offset = state.index; // caret al final de done
+    range.setStart(node.firstChild || node, offset);
+    range.setEnd(node.firstChild || node, offset);
+    const r = range.getBoundingClientRect();
+    let caret = target.querySelector('.caret');
+    if(!caret){ caret = document.createElement('div'); caret.className='caret'; target.appendChild(caret); }
+    const left = (r.left||rect.left) - rect.left + 2;
+    const top = (r.top||rect.top) - rect.top + 4;
+    caret.style.transform = `translate(${left}px, ${top}px)`;
+  }
+
+  // ======== Lógica de tecleo ========
+  function start(){
+    if(state.started && !state.paused) return;
+    state.started = true; state.paused = false;
+    state.startTime = performance.now() - state.elapsed; // reanudar
+    tick();
+    focusInput();
+  }
+  function pause(){ state.paused = true; state.elapsed = performance.now() - state.startTime; }
+  function reset(newText){
+    state.text = (newText !== undefined ? newText : generateText());
+    state.index = 0; state.started=false; state.paused=false; state.startTime=0; state.elapsed=0; state.errors=0; state.typed=0; state.correct=0;
+    render(); updateStats();
+  }
+
+  function handleInput(e){
+    if(!state.started || state.paused) return;
+    const expected = state.text[state.index] || '';
+    const ch = e.key;
+    state.typed++;
+
+    if(ch === 'Tab'){ e.preventDefault(); reset(generateText()); return; }
+    if(ch === 'Escape'){ e.preventDefault(); reset(); return; }
+
+    if(ch.length === 1 || ch === 'Enter' || ch === 'Backspace' || ch === ' '){
+      const typedChar = ch === 'Enter' ? '\n' : (ch === 'Backspace' ? '\b' : ch);
+      // No permitimos retroceder el índice con Backspace, pero lo contamos como tecleo
+      if(typedChar === expected){
+        state.index++; state.correct++;
+        annotateChar(true);
+      } else {
+        state.errors++;
+        annotateChar(false);
+      }
+      render();
+      if(state.index >= state.text.length){ finish(); }
+    }
+  }
+
+  function annotateChar(good){
+    // Marcar visualmente el último char escrito como ok/bad en el span 'done'
+    const before = state.text.slice(0, state.index + (good?0:0));
+    const lastIdx = Math.max(0, state.index-1);
+    const last = state.text[lastIdx] || '';
+    const after = state.text.slice(state.index);
+
+    target.innerHTML = '';
+    const done = document.createElement('span'); done.className='done';
+    const lastSpan = document.createElement('span'); lastSpan.className = good ? 'ok' : 'bad'; lastSpan.textContent = last;
+    done.textContent = before.slice(0,-1);
+    done.appendChild(lastSpan);
+    const current = document.createElement('span'); current.className='current'; current.textContent = state.text[state.index] || ' ';
+    const rest = document.createElement('span'); rest.textContent = after.slice(1);
+    target.append(done,current,rest);
+  }
+
+  function finish(){
+    state.paused = true; state.elapsed = performance.now() - state.startTime;
+    const wpm = calcWpm();
+    const best = saveBest(wpm);
+    kBest.textContent = best;
+    flash(`¡Completado! WPM ${wpm} · Precisión ${kAcc.textContent}`);
+  }
+
+  function calcWpm(){
+    const ms = (state.paused ? state.elapsed : performance.now() - state.startTime);
+    const minutes = Math.max(ms/60000, 1/60);
+    const words = state.correct/5; // estándar WPM: 5 chars = 1 palabra
+    return Math.max(0, Math.round(words/minutes));
+  }
+
+  function updateStats(){
+    const ms = state.started ? (state.paused ? state.elapsed : performance.now() - state.startTime) : state.elapsed;
+    const wpm = state.started ? calcWpm() : 0;
+    const cpm = state.started ? Math.round((state.correct)/(Math.max(ms/60000,1/60))) : 0;
+    const acc = state.typed ? (state.correct/state.typed)*100 : 100;
+
+    kTime.textContent = fmtTime(ms);
+    kWpm.textContent = wpm;
+    kCpm.textContent = cpm;
+    kAcc.textContent = fmtPct(acc);
+    kErr.textContent = state.errors;
+  }
+
+  let raf = null;
+  function tick(){
+    if(!state.started || state.paused){ cancelAnimationFrame(raf); return; }
+    updateStats();
+    raf = requestAnimationFrame(tick);
+  }
+
+  function focusInput(){ hiddenInput.focus(); hiddenInput.setSelectionRange(hiddenInput.value.length, hiddenInput.value.length); }
+
+  function flash(msg){
+    const toast = document.createElement('div');
+    toast.textContent = msg;
+    toast.style.cssText = 'position:fixed;left:50%;top:12px;transform:translateX(-50%);background:white;border:1px solid var(--border);padding:10px 14px;border-radius:10px;z-index:99;box-shadow:0 10px 30px rgba(0,0,0,.1);color:var(--ink);';
+    document.body.appendChild(toast);
+    setTimeout(()=>toast.remove(), 2200);
+  }
+
+  // ======== Eventos ========
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Tab'){ e.preventDefault(); }
+    if(e.key === 'Escape'){ e.preventDefault(); }
+    if(!state.started && e.key.length===1){ start(); }
+  }, true);
+
+  hiddenInput.addEventListener('keydown', (e)=>{
+    if(e.repeat) return; // evitar repetición sostenida
+    handleInput(e);
+  });
+
+  target.addEventListener('click', focusInput);
+  btnStart.addEventListener('click', ()=>{ start(); focusInput(); });
+  btnPause.addEventListener('click', ()=>{ pause(); updateStats(); });
+  btnReset.addEventListener('click', ()=> reset());
+  btnNuevo.addEventListener('click', ()=> reset(generateText()));
+
+  mode.addEventListener('change', ()=>{ customWrap.style.display = mode.value==='personalizado'?'flex':'none'; reset(generateText()); });
+  nivel.addEventListener('change', ()=> reset(generateText()));
+  longitud.addEventListener('change', ()=> reset(generateText()));
+  custom.addEventListener('change', ()=> reset(generateText()));
+
+  // ======== Init ========
+  reset(generateText());
+  kBest.textContent = loadBest();
+  focusInput();
+  </script>
+</body>
+</html>

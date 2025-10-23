@@ -3,18 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Juego: Aprende Mecanografía (JS)</title>
+  <title>Juego: Aprende Mecanografía</title>
   <style>
     :root{
-      --bg:#ffffff; /* Fondo blanco */
-      --card:#f8fafc; /* slate-50 */
-      --muted:#64748b; /* slate-500 */
-      --accent:#3b82f6; /* blue-500 */
-      --ok:#10b981; /* green-500 */
-      --bad:#ef4444; /* red-500 */
-      --warn:#f59e0b; /* amber-500 */
-      --ink:#1e293b; /* slate-800 */
-      --border:#e2e8f0; /* slate-200 */
+      --bg:#ffffff;
+      --card:#f8fafc;
+      --muted:#64748b;
+      --accent:#3b82f6;
+      --ok:#10b981;
+      --bad:#ef4444;
+      --warn:#f59e0b;
+      --ink:#1e293b;
+      --border:#e2e8f0;
     }
     *{box-sizing:border-box}
     body{
@@ -26,71 +26,71 @@
       display:grid; place-items:start center;
       padding:24px;
     }
-    .app{width:min(1100px,96vw);}
-    .header{display:flex;gap:16px;align-items:center;justify-content:space-between;margin-bottom:12px}
-    .title{font-size:clamp(20px,2.2vw,28px);font-weight:800;letter-spacing:.3px}
-    .subtitle{font-size:12px;color:var(--muted)}
-    .card{background:var(--card); backdrop-filter: blur(8px); border:1px solid var(--border); border-radius:16px; padding:16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);}
-    .row{display:flex;gap:12px;flex-wrap:wrap}
-    .controls select,.controls button,.controls input[type="number"]{
+    .aplicacion{width:min(1100px,96vw);}
+    .encabezado{display:flex;gap:16px;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .titulo{font-size:clamp(20px,2.2vw,28px);font-weight:800;letter-spacing:.3px}
+    .subtitulo{font-size:12px;color:var(--muted)}
+    .tarjeta{background:var(--card); backdrop-filter: blur(8px); border:1px solid var(--border); border-radius:16px; padding:16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);}
+    .fila{display:flex;gap:12px;flex-wrap:wrap}
+    .controles select,.controles button,.controles input[type="number"]{
       background:white;color:var(--ink);border:1px solid var(--border);padding:10px 12px;border-radius:10px; font-weight:600; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     }
-    .controls button:hover {
+    .controles button:hover {
       background:#f1f5f9;
     }
-    .controls .pill{padding:8px 10px;border-radius:999px;background:white;border:1px solid var(--border);display:flex;gap:6px;align-items:center; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);}
-    .controls label{font-size:12px;color:var(--muted)}
-    .grid{display:grid;grid-template-columns:1fr;gap:12px}
-    @media (max-width:900px){.grid{grid-template-columns:1fr}}
+    .controles .pildora{padding:8px 10px;border-radius:999px;background:white;border:1px solid var(--border);display:flex;gap:6px;align-items:center; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);}
+    .controles label{font-size:12px;color:var(--muted)}
+    .cuadricula{display:grid;grid-template-columns:1fr;gap:12px}
+    @media (max-width:900px){.cuadricula{grid-template-columns:1fr}}
 
     /* Texto objetivo */
-    #target{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace; 
+    #textoObjetivo{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace; 
       line-height:1.8; font-size:clamp(16px,2.1vw,20px); padding:18px; border-radius:12px; background:white; min-height:140px;
       border:1px dashed var(--border); position:relative; box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);}
-    #target .done{color:#94a3b8} /* slate-400 */
-    #target .current{background:linear-gradient(90deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0)); border-bottom:2px solid var(--accent)}
-    #target .ok{color:var(--ok)}
-    #target .bad{color:var(--bad); text-decoration: underline wavy var(--bad) 2px}
-    .caret{position:absolute; width:2px; background:var(--accent); height:1.4em; animation:blink 1s steps(1) infinite; box-shadow:0 0 10px var(--accent)}
-    @keyframes blink{50%{opacity:0}}
+    #textoObjetivo .completado{color:#94a3b8}
+    #textoObjetivo .actual{background:linear-gradient(90deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0)); border-bottom:2px solid var(--accent)}
+    #textoObjetivo .correcto{color:var(--ok)}
+    #textoObjetivo .incorrecto{color:var(--bad); text-decoration: underline wavy var(--bad) 2px}
+    .cursor{position:absolute; width:2px; background:var(--accent); height:1.4em; animation:parpadeo 1s steps(1) infinite; box-shadow:0 0 10px var(--accent)}
+    @keyframes parpadeo{50%{opacity:0}}
 
-    /* Área de escritura accesible (pero oculto visualmente) */
-    #hiddenInput{position:absolute; left:-9999px}
+    /* Área de escritura oculta */
+    #entradaOculta{position:absolute; left:-9999px}
 
-    /* Stats */
-    .stats{display:grid; grid-template-columns: repeat(5, minmax(120px,1fr)); gap:10px}
-    @media (max-width:700px){.stats{grid-template-columns:repeat(2,1fr)}}
+    /* Estadísticas */
+    .estadisticas{display:grid; grid-template-columns: repeat(5, minmax(120px,1fr)); gap:10px}
+    @media (max-width:700px){.estadisticas{grid-template-columns:repeat(2,1fr)}}
     .kpi{background:white;border:1px solid var(--border); padding:12px;border-radius:12px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);}
-    .kpi .label{font-size:12px;color:var(--muted)}
-    .kpi .value{font-size:22px;font-weight:800}
+    .kpi .etiqueta{font-size:12px;color:var(--muted)}
+    .kpi .valor{font-size:22px;font-weight:800}
 
-    .progress{height:10px;background:#e2e8f0;border-radius:999px;overflow:hidden;border:1px solid var(--border)}
-    .bar{height:100%;width:0;background:linear-gradient(90deg, var(--accent), #60a5fa)}
+    .progreso{height:10px;background:#e2e8f0;border-radius:999px;overflow:hidden;border:1px solid var(--border)}
+    .barra{height:100%;width:0;background:linear-gradient(90deg, var(--accent), #60a5fa)}
 
-    .footer{color:var(--muted);font-size:12px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:8px}
-    .badge{background:white;border:1px solid var(--border);padding:4px 8px;border-radius:999px; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);}
+    .pie{color:var(--muted);font-size:12px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .insignia{background:white;border:1px solid var(--border);padding:4px 8px;border-radius:999px; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);}
   </style>
 </head>
 <body>
-  <div class="app">
-    <div class="header">
+  <div class="aplicacion">
+    <div class="encabezado">
       <div>
-        <div class="title">🎯 Juego: Aprende Mecanografía</div>
-        <div class="subtitle">JavaScript puro · Mide WPM, precisión y errores · Guarda récord en LocalStorage</div>
+        <div class="titulo">🎯 Juego: Aprende Mecanografía</div>
+        <div class="subtitulo">JavaScript puro · Mide PPM, precisión y errores · Guarda récord en LocalStorage</div>
       </div>
-      <div class="row">
-        <button id="btnStart">▶ Iniciar</button>
-        <button id="btnPause">⏸ Pausa</button>
-        <button id="btnReset">↺ Reiniciar</button>
+      <div class="fila">
+        <button id="btnIniciar">▶ Iniciar</button>
+        <button id="btnPausa">⏸ Pausa</button>
+        <button id="btnReiniciar">↺ Reiniciar</button>
       </div>
     </div>
 
-    <div class="card controls">
-      <div class="row" style="align-items:center; justify-content:space-between">
-        <div class="row" style="flex-wrap:wrap">
-          <div class="pill">
-            <label for="mode">Modo</label>
-            <select id="mode">
+    <div class="tarjeta controles">
+      <div class="fila" style="align-items:center; justify-content:space-between">
+        <div class="fila" style="flex-wrap:wrap">
+          <div class="pildora">
+            <label for="modo">Modo</label>
+            <select id="modo">
               <option value="basico">Básico (letras)</option>
               <option value="palabras" selected>Palabras</option>
               <option value="frases">Frases</option>
@@ -99,7 +99,7 @@
               <option value="personalizado">Personalizado</option>
             </select>
           </div>
-          <div class="pill">
+          <div class="pildora">
             <label for="nivel">Nivel</label>
             <select id="nivel">
               <option value="1">1</option>
@@ -109,58 +109,59 @@
               <option value="5">5</option>
             </select>
           </div>
-          <div class="pill">
+          <div class="pildora">
             <label for="longitud">Longitud</label>
             <input id="longitud" type="number" min="20" max="500" value="120" />
           </div>
-          <div class="pill" id="customWrap" style="display:none; min-width:340px">
-            <label for="custom">Texto personalizado</label>
-            <input id="custom" type="text" placeholder="Escribe aquí el texto a practicar…" style="flex:1; background:transparent; color:var(--ink); border:0; outline:none" />
+          <div class="pildora" id="contenedorPersonalizado" style="display:none; min-width:340px">
+            <label for="personalizado">Texto personalizado</label>
+            <input id="personalizado" type="text" placeholder="Escribe aquí el texto a practicar…" style="flex:1; background:transparent; color:var(--ink); border:0; outline:none" />
           </div>
         </div>
-        <div class="row">
+        <div class="fila">
           <button id="btnNuevo">🧩 Nuevo texto</button>
         </div>
       </div>
     </div>
 
-    <div class="grid">
+    <div class="cuadricula">
       <!-- Área principal de escritura -->
-      <div class="card">
-        <div id="target" aria-live="polite"></div>
-        <input id="hiddenInput" aria-label="Área de escritura" />
-        <div class="progress" style="margin-top:12px"><div class="bar" id="bar"></div></div>
-        <div class="footer">
-          <span class="badge">Consejo: empieza a teclear para arrancar el temporizador.</span>
-          <span class="badge">ESC: reinicia • TAB: nuevo texto</span>
+      <div class="tarjeta">
+        <div id="textoObjetivo" aria-live="polite"></div>
+        <input id="entradaOculta" aria-label="Área de escritura" />
+        <div class="progreso" style="margin-top:12px"><div class="barra" id="barra"></div></div>
+        <div class="pie">
+          <span class="insignia">Consejo: empieza a teclear para arrancar el temporizador.</span>
+          <span class="insignia">ESC: reinicia • TAB: nuevo texto</span>
         </div>
       </div>
       
       <!-- Estadísticas -->
-      <div class="card">
-        <div class="stats">
-          <div class="kpi"><div class="label">⏱ Tiempo</div><div class="value" id="kTime">0.0 s</div></div>
-          <div class="kpi"><div class="label">⚡ WPM</div><div class="value" id="kWpm">0</div></div>
-          <div class="kpi"><div class="label">⌨️ CPM</div><div class="value" id="kCpm">0</div></div>
-          <div class="kpi"><div class="label">🎯 Precisión</div><div class="value" id="kAcc">100%</div></div>
-          <div class="kpi"><div class="label">❌ Errores</div><div class="value" id="kErr">0</div></div>
+      <div class="tarjeta">
+        <div class="estadisticas">
+          <div class="kpi"><div class="etiqueta">⏱ Tiempo</div><div class="valor" id="kTiempo">0.0 s</div></div>
+          <div class="kpi"><div class="etiqueta">⚡ PPM</div><div class="valor" id="kPpm">0</div></div>
+          <div class="kpi"><div class="etiqueta">⌨️ CPM</div><div class="valor" id="kCpm">0</div></div>
+          <div class="kpi"><div class="etiqueta">🎯 Precisión</div><div class="valor" id="kPrecision">100%</div></div>
+          <div class="kpi"><div class="etiqueta">❌ Errores</div><div class="valor" id="kErrores">0</div></div>
         </div>
-        <div class="row" style="margin-top:12px">
-          <div class="kpi" style="flex:1"><div class="label">🏆 Récord WPM</div><div class="value" id="kBest">0</div></div>
-          <div class="kpi" style="flex:1"><div class="label">📈 Progreso</div><div class="value" id="kProg">0%</div></div>
+        <div class="fila" style="margin-top:12px">
+          <div class="kpi" style="flex:1"><div class="etiqueta">🏆 Récord PPM</div><div class="valor" id="kMejor">0</div></div>
+          <div class="kpi" style="flex:1"><div class="etiqueta">📈 Progreso</div><div class="valor" id="kProgreso">0%</div></div>
         </div>
       </div>
     </div>
   </div>
 
   <script>
-  // ======== Datos base ========
-  const WORDS = `camión rueda freno torque ruta carga motor aceite filtro embrague caja cambio volante seguro pista viaje
+  // ======== DATOS BASE ========
+  // Conjuntos de palabras, frases y caracteres para los diferentes modos
+  const PALABRAS = `camión rueda freno torque ruta carga motor aceite filtro embrague caja cambio volante seguro pista viaje
   neumático eje ballesta bujía batería rodamiento pistón cigüeñal chasis tráiler trailer trailer
   carretera peaje taller taller aliado proveedor cliente factura pedido despacho inventario picking packing
   software logística bodega pallet estiba conductor tracto mulero`.split(/\s+/);
 
-  const PHRASES = [
+  const FRASES = [
     "El rápido zorro marrón salta sobre el perro perezoso.",
     "Lleva whisky del bueno al jefe por favor.",
     "Quien a buen árbol se arrima, buena sombra le cobija.",
@@ -168,246 +169,266 @@
     "Repuestos Simón Bolívar: calidad, servicio y confianza." 
   ];
 
-  const NUMBERS = "0123456789 ".repeat(10).trim();
-  const SYMBOLS = "!@#$%^&*()[]{}:;.,-_=+/?\\'\"|<> ".repeat(6).trim();
-  const BASIC = "asdf jklñ ASDF JKLÑ qwer uiop zxcv nm,.;:";
+  const NUMEROS = "0123456789 ".repeat(10).trim();
+  const SIMBOLOS = "!@#$%^&*()[]{}:;.,-_=+/?\\'\"|<> ".repeat(6).trim();
+  const BASICO = "asdf jklñ ASDF JKLÑ qwer uiop zxcv nm,.;:";
 
-  // ======== Estado ========
-  const state = {
-    text:"",
-    index:0,
-    started:false,
-    paused:false,
-    startTime:0,
-    elapsed:0, // ms acumulados
-    errors:0,
-    typed:0, // todas las teclas
-    correct:0,
+  // ======== ESTADO DE LA APLICACIÓN ========
+  // Objeto que almacena todo el estado actual del juego
+  const estado = {
+    texto:"",           // Texto actual a escribir
+    indice:0,           // Posición actual en el texto
+    iniciado:false,     // Si el juego ha comenzado
+    pausado:false,      // Si el juego está en pausa
+    tiempoInicio:0,     // Marca de tiempo cuando comenzó
+    tiempoTranscurrido:0, // Tiempo acumulado en milisegundos
+    errores:0,          // Contador de errores
+    tecleado:0,         // Total de teclas presionadas
+    correcto:0,         // Teclas correctamente presionadas
   };
 
-  // ======== DOM ========
-  const target = document.getElementById('target');
-  const hiddenInput = document.getElementById('hiddenInput');
-  const kTime = document.getElementById('kTime');
-  const kWpm = document.getElementById('kWpm');
+  // ======== ELEMENTOS DEL DOM ========
+  // Referencias a todos los elementos HTML que necesitamos manipular
+  const textoObjetivo = document.getElementById('textoObjetivo');
+  const entradaOculta = document.getElementById('entradaOculta');
+  const kTiempo = document.getElementById('kTiempo');
+  const kPpm = document.getElementById('kPpm');
   const kCpm = document.getElementById('kCpm');
-  const kAcc = document.getElementById('kAcc');
-  const kErr = document.getElementById('kErr');
-  const kBest = document.getElementById('kBest');
-  const kProg = document.getElementById('kProg');
-  const bar = document.getElementById('bar');
+  const kPrecision = document.getElementById('kPrecision');
+  const kErrores = document.getElementById('kErrores');
+  const kMejor = document.getElementById('kMejor');
+  const kProgreso = document.getElementById('kProgreso');
+  const barra = document.getElementById('barra');
 
-  const btnStart = document.getElementById('btnStart');
-  const btnPause = document.getElementById('btnPause');
-  const btnReset = document.getElementById('btnReset');
+  const btnIniciar = document.getElementById('btnIniciar');
+  const btnPausa = document.getElementById('btnPausa');
+  const btnReiniciar = document.getElementById('btnReiniciar');
   const btnNuevo = document.getElementById('btnNuevo');
-  const mode = document.getElementById('mode');
+  const modo = document.getElementById('modo');
   const nivel = document.getElementById('nivel');
   const longitud = document.getElementById('longitud');
-  const custom = document.getElementById('custom');
-  const customWrap = document.getElementById('customWrap');
+  const personalizado = document.getElementById('personalizado');
+  const contenedorPersonalizado = document.getElementById('contenedorPersonalizado');
 
-  // ======== Utilidades ========
-  function clamp(n,a,b){return Math.max(a,Math.min(b,n))}
-  function fmtPct(n){return (n).toFixed(0)+"%"}
-  function fmtTime(ms){return (ms/1000).toFixed(1)+" s"}
+  // ======== FUNCIONES UTILITARIAS ========
+  // Funciones auxiliares para cálculos y formateo
+  function limitar(n,a,b){return Math.max(a,Math.min(b,n))} // Limita un número entre un mínimo y máximo
+  function formatoPorcentaje(n){return (n).toFixed(0)+"%"} // Formatea número como porcentaje
+  function formatearTiempo(ms){return (ms/1000).toFixed(1)+" s"} // Convierte milisegundos a segundos
 
-  function saveBest(wpm){
-    const key = 'typing_best_wpm';
-    const best = Number(localStorage.getItem(key)||0);
-    if(wpm>best){ localStorage.setItem(key,String(wpm)); return wpm; }
-    return best;
+  // ======== GESTIÓN DE RÉCORDS ========
+  // Guarda y carga el mejor puntaje desde el almacenamiento local
+  function guardarMejor(ppm){
+    const clave = 'typing_mejor_ppm';
+    const mejor = Number(localStorage.getItem(clave)||0);
+    if(ppm>mejor){ localStorage.setItem(clave,String(ppm)); return ppm; }
+    return mejor;
   }
-  function loadBest(){ return Number(localStorage.getItem('typing_best_wpm')||0) }
+  function cargarMejor(){ return Number(localStorage.getItem('typing_mejor_ppm')||0) }
 
-  // ======== Generador de texto ========
-  function generateText(){
+  // ======== GENERACIÓN DE TEXTO ========
+  // Crea el texto a escribir según el modo y configuración seleccionados
+  function generarTexto(){
     const lvl = Number(nivel.value);
-    const len = clamp(Number(longitud.value)||120, 20, 500);
-    let out = "";
-    const m = mode.value;
+    const len = limitar(Number(longitud.value)||120, 20, 500);
+    let salida = "";
+    const m = modo.value;
     if(m==='personalizado'){
-      out = (custom.value||"Escribe el texto que deseas practicar.").trim();
+      salida = (personalizado.value||"Escribe el texto que deseas practicar.").trim();
     } else if(m==='basico'){
-      const chars = BASIC.repeat(6 - Math.max(1,6-lvl));
-      while(out.length < len){ out += pick(chars) }
+      const caracteres = BASICO.repeat(6 - Math.max(1,6-lvl));
+      while(salida.length < len){ salida += seleccionarAleatorio(caracteres) }
     } else if(m==='palabras'){
-      while(out.length < len){ out += pickArray(WORDS, lvl) + " "; }
-      out = out.trim();
+      while(salida.length < len){ salida += seleccionarDeArray(PALABRAS, lvl) + " "; }
+      salida = salida.trim();
     } else if(m==='frases'){
-      while(out.length < len){ out += pickArray(PHRASES, 1) + " "; }
-      out = out.trim();
+      while(salida.length < len){ salida += seleccionarDeArray(FRASES, 1) + " "; }
+      salida = salida.trim();
     } else if(m==='numeros'){
-      while(out.length < len){ out += pick(NUMBERS) }
+      while(salida.length < len){ salida += seleccionarAleatorio(NUMEROS) }
     } else if(m==='simbolos'){
-      while(out.length < len){ out += pick(SYMBOLS) }
+      while(salida.length < len){ salida += seleccionarAleatorio(SIMBOLOS) }
     }
-    return out.replace(/\s+/g,' ').slice(0,len).trim();
+    return salida.replace(/\s+/g,' ').slice(0,len).trim();
   }
-  function pick(str){ return str[Math.floor(Math.random()*str.length)] }
-  function pickArray(arr, mult=1){ return arr[Math.floor(Math.random()*arr.length*mult)%arr.length] }
+  function seleccionarAleatorio(str){ return str[Math.floor(Math.random()*str.length)] } // Selecciona carácter aleatorio
+  function seleccionarDeArray(arr, mult=1){ return arr[Math.floor(Math.random()*arr.length*mult)%arr.length] } // Selecciona elemento aleatorio de array
 
-  // ======== Render ========
-  function render(){
-    target.innerHTML = '';
-    const frag = document.createDocumentFragment();
-    const done = document.createElement('span'); done.className='done'; done.textContent = state.text.slice(0,state.index);
-    const current = document.createElement('span'); current.className='current'; current.textContent = state.text[state.index] || ' ';
-    const rest = document.createElement('span'); rest.textContent = state.text.slice(state.index+1);
-    frag.append(done, current, rest);
-    target.appendChild(frag);
-    // caret
-    positionCaret();
+  // ======== RENDERIZADO VISUAL ========
+  // Actualiza la interfaz mostrando el texto y progreso actual
+  function renderizar(){
+    textoObjetivo.innerHTML = '';
+    const fragmento = document.createDocumentFragment();
+    const completado = document.createElement('span'); completado.className='completado'; completado.textContent = estado.texto.slice(0,estado.indice);
+    const actual = document.createElement('span'); actual.className='actual'; actual.textContent = estado.texto[estado.indice] || ' ';
+    const resto = document.createElement('span'); resto.textContent = estado.texto.slice(estado.indice+1);
+    fragmento.append(completado, actual, resto);
+    textoObjetivo.appendChild(fragmento);
+    // cursor
+    posicionarCursor();
     // progreso
-    const prog = state.text.length? (state.index/state.text.length)*100 : 0;
-    bar.style.width = prog + '%';
-    kProg.textContent = Math.round(prog) + '%';
+    const progreso = estado.texto.length? (estado.indice/estado.texto.length)*100 : 0;
+    barra.style.width = progreso + '%';
+    kProgreso.textContent = Math.round(progreso) + '%';
   }
 
-  function positionCaret(){
-    // posiciona un cursor "visual" detrás del carácter actual
-    const rect = target.getBoundingClientRect();
-    const range = document.createRange();
-    const node = target.childNodes[0]; // done span
-    const offset = state.index; // caret al final de done
-    range.setStart(node.firstChild || node, offset);
-    range.setEnd(node.firstChild || node, offset);
-    const r = range.getBoundingClientRect();
-    let caret = target.querySelector('.caret');
-    if(!caret){ caret = document.createElement('div'); caret.className='caret'; target.appendChild(caret); }
-    const left = (r.left||rect.left) - rect.left + 2;
-    const top = (r.top||rect.top) - rect.top + 4;
-    caret.style.transform = `translate(${left}px, ${top}px)`;
+  // Posiciona el cursor visual en la posición actual de escritura
+  function posicionarCursor(){
+    const rect = textoObjetivo.getBoundingClientRect();
+    const rango = document.createRange();
+    const nodo = textoObjetivo.childNodes[0]; // span completado
+    const desplazamiento = estado.indice; // cursor al final de completado
+    rango.setStart(nodo.firstChild || nodo, desplazamiento);
+    rango.setEnd(nodo.firstChild || nodo, desplazamiento);
+    const r = rango.getBoundingClientRect();
+    let cursor = textoObjetivo.querySelector('.cursor');
+    if(!cursor){ cursor = document.createElement('div'); cursor.className='cursor'; textoObjetivo.appendChild(cursor); }
+    const izquierda = (r.left||rect.left) - rect.left + 2;
+    const arriba = (r.top||rect.top) - rect.top + 4;
+    cursor.style.transform = `translate(${izquierda}px, ${arriba}px)`;
   }
 
-  // ======== Lógica de tecleo ========
-  function start(){
-    if(state.started && !state.paused) return;
-    state.started = true; state.paused = false;
-    state.startTime = performance.now() - state.elapsed; // reanudar
-    tick();
-    focusInput();
+  // ======== LÓGICA PRINCIPAL DEL JUEGO ========
+  // Controla el inicio, pausa y reinicio del juego
+  function iniciar(){
+    if(estado.iniciado && !estado.pausado) return;
+    estado.iniciado = true; estado.pausado = false;
+    estado.tiempoInicio = performance.now() - estado.tiempoTranscurrido; // reanudar
+    ciclo();
+    enfocarEntrada();
   }
-  function pause(){ state.paused = true; state.elapsed = performance.now() - state.startTime; }
-  function reset(newText){
-    state.text = (newText !== undefined ? newText : generateText());
-    state.index = 0; state.started=false; state.paused=false; state.startTime=0; state.elapsed=0; state.errors=0; state.typed=0; state.correct=0;
-    render(); updateStats();
+  function pausar(){ estado.pausado = true; estado.tiempoTranscurrido = performance.now() - estado.tiempoInicio; }
+  function reiniciar(nuevoTexto){
+    estado.texto = (nuevoTexto !== undefined ? nuevoTexto : generarTexto());
+    estado.indice = 0; estado.iniciado=false; estado.pausado=false; estado.tiempoInicio=0; estado.tiempoTranscurrido=0; estado.errores=0; estado.tecleado=0; estado.correcto=0;
+    renderizar(); actualizarEstadisticas();
   }
 
-  function handleInput(e){
-    if(!state.started || state.paused) return;
-    const expected = state.text[state.index] || '';
-    const ch = e.key;
-    state.typed++;
+  // Procesa cada tecla presionada y actualiza el estado
+  function manejarEntrada(e){
+    if(!estado.iniciado || estado.pausado) return;
+    const esperado = estado.texto[estado.indice] || '';
+    const tecla = e.key;
+    estado.tecleado++;
 
-    if(ch === 'Tab'){ e.preventDefault(); reset(generateText()); return; }
-    if(ch === 'Escape'){ e.preventDefault(); reset(); return; }
+    if(tecla === 'Tab'){ e.preventDefault(); reiniciar(generarTexto()); return; }
+    if(tecla === 'Escape'){ e.preventDefault(); reiniciar(); return; }
 
-    if(ch.length === 1 || ch === 'Enter' || ch === 'Backspace' || ch === ' '){
-      const typedChar = ch === 'Enter' ? '\n' : (ch === 'Backspace' ? '\b' : ch);
+    if(tecla.length === 1 || tecla === 'Enter' || tecla === 'Backspace' || tecla === ' '){
+      const caracterTecleado = tecla === 'Enter' ? '\n' : (tecla === 'Backspace' ? '\b' : tecla);
       // No permitimos retroceder el índice con Backspace, pero lo contamos como tecleo
-      if(typedChar === expected){
-        state.index++; state.correct++;
-        annotateChar(true);
+      if(caracterTecleado === esperado){
+        estado.indice++; estado.correcto++;
+        anotarCaracter(true);
       } else {
-        state.errors++;
-        annotateChar(false);
+        estado.errores++;
+        anotarCaracter(false);
       }
-      render();
-      if(state.index >= state.text.length){ finish(); }
+      renderizar();
+      if(estado.indice >= estado.texto.length){ finalizar(); }
     }
   }
 
-  function annotateChar(good){
-    // Marcar visualmente el último char escrito como ok/bad en el span 'done'
-    const before = state.text.slice(0, state.index + (good?0:0));
-    const lastIdx = Math.max(0, state.index-1);
-    const last = state.text[lastIdx] || '';
-    const after = state.text.slice(state.index);
+  // Marca visualmente el último carácter como correcto o incorrecto
+  function anotarCaracter(bien){
+    const antes = estado.texto.slice(0, estado.indice + (bien?0:0));
+    const ultimoIndice = Math.max(0, estado.indice-1);
+    const ultimo = estado.texto[ultimoIndice] || '';
+    const despues = estado.texto.slice(estado.indice);
 
-    target.innerHTML = '';
-    const done = document.createElement('span'); done.className='done';
-    const lastSpan = document.createElement('span'); lastSpan.className = good ? 'ok' : 'bad'; lastSpan.textContent = last;
-    done.textContent = before.slice(0,-1);
-    done.appendChild(lastSpan);
-    const current = document.createElement('span'); current.className='current'; current.textContent = state.text[state.index] || ' ';
-    const rest = document.createElement('span'); rest.textContent = after.slice(1);
-    target.append(done,current,rest);
+    textoObjetivo.innerHTML = '';
+    const completado = document.createElement('span'); completado.className='completado';
+    const ultimoSpan = document.createElement('span'); ultimoSpan.className = bien ? 'correcto' : 'incorrecto'; ultimoSpan.textContent = ultimo;
+    completado.textContent = antes.slice(0,-1);
+    completado.appendChild(ultimoSpan);
+    const actual = document.createElement('span'); actual.className='actual'; actual.textContent = estado.texto[estado.indice] || ' ';
+    const resto = document.createElement('span'); resto.textContent = despues.slice(1);
+    textoObjetivo.append(completado,actual,resto);
   }
 
-  function finish(){
-    state.paused = true; state.elapsed = performance.now() - state.startTime;
-    const wpm = calcWpm();
-    const best = saveBest(wpm);
-    kBest.textContent = best;
-    flash(`¡Completado! WPM ${wpm} · Precisión ${kAcc.textContent}`);
+  // Finaliza el juego cuando se completa el texto
+  function finalizar(){
+    estado.pausado = true; estado.tiempoTranscurrido = performance.now() - estado.tiempoInicio;
+    const ppm = calcularPpm();
+    const mejor = guardarMejor(ppm);
+    kMejor.textContent = mejor;
+    mostrarMensaje(`¡Completado! PPM ${ppm} · Precisión ${kPrecision.textContent}`);
   }
 
-  function calcWpm(){
-    const ms = (state.paused ? state.elapsed : performance.now() - state.startTime);
-    const minutes = Math.max(ms/60000, 1/60);
-    const words = state.correct/5; // estándar WPM: 5 chars = 1 palabra
-    return Math.max(0, Math.round(words/minutes));
+  // ======== CÁLCULO DE ESTADÍSTICAS ========
+  // Calcula las Palabras Por Minuto (PPM)
+  function calcularPpm(){
+    const ms = (estado.pausado ? estado.tiempoTranscurrido : performance.now() - estado.tiempoInicio);
+    const minutos = Math.max(ms/60000, 1/60);
+    const palabras = estado.correcto/5; // estándar PPM: 5 caracteres = 1 palabra
+    return Math.max(0, Math.round(palabras/minutos));
   }
 
-  function updateStats(){
-    const ms = state.started ? (state.paused ? state.elapsed : performance.now() - state.startTime) : state.elapsed;
-    const wpm = state.started ? calcWpm() : 0;
-    const cpm = state.started ? Math.round((state.correct)/(Math.max(ms/60000,1/60))) : 0;
-    const acc = state.typed ? (state.correct/state.typed)*100 : 100;
+  // Actualiza todas las estadísticas en pantalla
+  function actualizarEstadisticas(){
+    const ms = estado.iniciado ? (estado.pausado ? estado.tiempoTranscurrido : performance.now() - estado.tiempoInicio) : estado.tiempoTranscurrido;
+    const ppm = estado.iniciado ? calcularPpm() : 0;
+    const cpm = estado.iniciado ? Math.round((estado.correcto)/(Math.max(ms/60000,1/60))) : 0;
+    const precision = estado.tecleado ? (estado.correcto/estado.tecleado)*100 : 100;
 
-    kTime.textContent = fmtTime(ms);
-    kWpm.textContent = wpm;
+    kTiempo.textContent = formatearTiempo(ms);
+    kPpm.textContent = ppm;
     kCpm.textContent = cpm;
-    kAcc.textContent = fmtPct(acc);
-    kErr.textContent = state.errors;
+    kPrecision.textContent = formatoPorcentaje(precision);
+    kErrores.textContent = estado.errores;
   }
 
+  // ======== CICLO PRINCIPAL ========
+  // Bucle de actualización continua mientras el juego está activo
   let raf = null;
-  function tick(){
-    if(!state.started || state.paused){ cancelAnimationFrame(raf); return; }
-    updateStats();
-    raf = requestAnimationFrame(tick);
+  function ciclo(){
+    if(!estado.iniciado || estado.pausado){ cancelAnimationFrame(raf); return; }
+    actualizarEstadisticas();
+    raf = requestAnimationFrame(ciclo);
   }
 
-  function focusInput(){ hiddenInput.focus(); hiddenInput.setSelectionRange(hiddenInput.value.length, hiddenInput.value.length); }
+  // ======== FUNCIONES DE INTERFAZ ========
+  // Enfoca el campo de entrada oculto para capturar teclas
+  function enfocarEntrada(){ entradaOculta.focus(); entradaOculta.setSelectionRange(entradaOculta.value.length, entradaOculta.value.length); }
 
-  function flash(msg){
-    const toast = document.createElement('div');
-    toast.textContent = msg;
-    toast.style.cssText = 'position:fixed;left:50%;top:12px;transform:translateX(-50%);background:white;border:1px solid var(--border);padding:10px 14px;border-radius:10px;z-index:99;box-shadow:0 10px 30px rgba(0,0,0,.1);color:var(--ink);';
-    document.body.appendChild(toast);
-    setTimeout(()=>toast.remove(), 2200);
+  // Muestra un mensaje temporal en pantalla
+  function mostrarMensaje(mensaje){
+    const notificacion = document.createElement('div');
+    notificacion.textContent = mensaje;
+    notificacion.style.cssText = 'position:fixed;left:50%;top:12px;transform:translateX(-50%);background:white;border:1px solid var(--border);padding:10px 14px;border-radius:10px;z-index:99;box-shadow:0 10px 30px rgba(0,0,0,.1);color:var(--ink);';
+    document.body.appendChild(notificacion);
+    setTimeout(()=>notificacion.remove(), 2200);
   }
 
-  // ======== Eventos ========
+  // ======== CONFIGURACIÓN DE EVENTOS ========
+  // Configura todos los event listeners del juego
   document.addEventListener('keydown', (e)=>{
     if(e.key === 'Tab'){ e.preventDefault(); }
     if(e.key === 'Escape'){ e.preventDefault(); }
-    if(!state.started && e.key.length===1){ start(); }
+    if(!estado.iniciado && e.key.length===1){ iniciar(); }
   }, true);
 
-  hiddenInput.addEventListener('keydown', (e)=>{
+  entradaOculta.addEventListener('keydown', (e)=>{
     if(e.repeat) return; // evitar repetición sostenida
-    handleInput(e);
+    manejarEntrada(e);
   });
 
-  target.addEventListener('click', focusInput);
-  btnStart.addEventListener('click', ()=>{ start(); focusInput(); });
-  btnPause.addEventListener('click', ()=>{ pause(); updateStats(); });
-  btnReset.addEventListener('click', ()=> reset());
-  btnNuevo.addEventListener('click', ()=> reset(generateText()));
+  textoObjetivo.addEventListener('click', enfocarEntrada);
+  btnIniciar.addEventListener('click', ()=>{ iniciar(); enfocarEntrada(); });
+  btnPausa.addEventListener('click', ()=>{ pausar(); actualizarEstadisticas(); });
+  btnReiniciar.addEventListener('click', ()=> reiniciar());
+  btnNuevo.addEventListener('click', ()=> reiniciar(generarTexto()));
 
-  mode.addEventListener('change', ()=>{ customWrap.style.display = mode.value==='personalizado'?'flex':'none'; reset(generateText()); });
-  nivel.addEventListener('change', ()=> reset(generateText()));
-  longitud.addEventListener('change', ()=> reset(generateText()));
-  custom.addEventListener('change', ()=> reset(generateText()));
+  modo.addEventListener('change', ()=>{ contenedorPersonalizado.style.display = modo.value==='personalizado'?'flex':'none'; reiniciar(generarTexto()); });
+  nivel.addEventListener('change', ()=> reiniciar(generarTexto()));
+  longitud.addEventListener('change', ()=> reiniciar(generarTexto()));
+  personalizado.addEventListener('change', ()=> reiniciar(generarTexto()));
 
-  // ======== Init ========
-  reset(generateText());
-  kBest.textContent = loadBest();
-  focusInput();
+  // ======== INICIALIZACIÓN ========
+  // Configuración inicial cuando se carga la página
+  reiniciar(generarTexto());
+  kMejor.textContent = cargarMejor();
+  enfocarEntrada();
   </script>
 </body>
 </html>
